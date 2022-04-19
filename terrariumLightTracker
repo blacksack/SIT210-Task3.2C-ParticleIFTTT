@@ -1,0 +1,32 @@
+#include "Particle.h"
+#include <BH1750.h>
+
+BH1750 sensor(0x23, Wire);
+
+double currentLight = 0;
+
+void setup() {
+    sensor.begin();
+    sensor.set_sensor_mode(BH1750::forced_mode_high_res2);  //configures the sensor
+    Particle.variable("currentLightLevel", currentLight);   //used by IFTTT to catch this variable value - which is the current light sensor value
+}
+
+void loop() {
+    sensor.make_forced_measurement();                        //measures current brightness
+    
+    currentLight = sensor.get_light_level();                 //grabbing the sensor brightness value and assigning to the variable "currentLight"
+    
+    
+    if (currentLight > 1500)                                 //This would have to be calibrated to suit the room the terrarium is installed in (IFTTT trigger = this means there IS light)
+    {
+        Particle.publish("currentlight", "true", PRIVATE);
+    }
+    if (currentLight < 1500)                                 //This would have to be calibrated to suit the room the terrarium is installed in (IFTTT trigger = this means there is NO light)
+    {
+        Particle.publish("currentlight", "false", PRIVATE);
+    }
+    
+    Particle.publish("lightLevel", String::format("%.2f", currentLight), PRIVATE);      //used to print the current light sensor value to console for calibration purposes
+    
+    delay(600000);                                            //delay has been set to every 10 minutes
+}
